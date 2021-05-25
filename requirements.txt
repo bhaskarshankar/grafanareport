@@ -3,3 +3,8 @@ docx2pdf==0.1.7
 docx==0.2.4
 flask==1.1.1
 wtforms==2.3.3
+flask-wtf
+wget
+python-docx
+datetime
+time

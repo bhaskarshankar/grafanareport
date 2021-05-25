@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<script type="text/javascript" src="/static/update_cache.js"></script>
+
+<body>
+	<form method="POST">{{ form.csrf_token }}
+		<TABLE BORDER="1" >
+			<div align="left">
+				<div align="left" class="border">
+					<div class="header">
+						<h1 class="word">Enter the details </h1>
+					</div>
+					<TR>
+						<TD>Grafana Host:</TD>
+						<TD>{{ form.grafanhost }}</TD>
+					</TR>
+					<TR>
+						<TD>DashBoard:</TD>
+						<TD>{{ dashboardname }}</TD>
+
+					</TR>
+					<TR>
+						<TD>Reportname:</TD>
+						<TD>{{ form.reportname(pattern="[a-zA-Z0-9]+",title="Input name without extension") }}</TD>
+					</TR>
+                  <TR>
+					<TD>TestDetails:</TD>
+					<TD>{{ form.TestDetails}}</TD>
+					</TR>
+
+					 <TR>
+					<TD>envDetails:</TD>
+					<TD>{{ form.envDetails(title="optional  Tets env ,config changes etc")}}</TD>
+					</TR>
+
+					 <TR>
+					<TD>userdetails:</TD>
+					<TD>{{ form.userdetails(title="optional input who executed the test")}}</TD>
+					</TR>
+		</TABLE>
+		  <p>&nbsp;</p>
+
+<p><span style="color:#800000;"><input type="submit" /></span></p>
+	</form>
+
+</body>
+
+</html>

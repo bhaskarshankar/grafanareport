@@ -16,11 +16,7 @@ def parse_json_recursively(json_object , target_key) :
                         print ( "id {}: {} {}".format ( target_key , metrickey , value ) )
                         dictionary [ metrickey ] = value
 
-                    # dictionary [ metrickey ].append ( value )
-                   # elif type ( dictionary [ key ] ) == list :
-                    #    dictionary [ metrickey ].append ( value )
-                   # else :
-                    #    dictionary [ metrickey ] = [ dictionary [ metrickey ] , value ]
+
                 else:
                     continue
 

@@ -1,15 +1,5 @@
-import datetime
-import json
-import os
-import stat
-import time
 import urllib.request
-import pandas as pd
-import wget
-import re
-import time as time_
 
-from parsejson import parse_json_recursively
 from worddoc import *
 
 

@@ -1,20 +1,22 @@
 import os
 import time
-import subprocess
+from configparser import ConfigParser
+
 import docx2pdf
 from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt , Inches
 from docx.text import font
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+
 # import pythoncom
-from webconsole import *
+
 
 # creating the docx and PDF file with thr images downloaded and adding few details to report
 # imagepath path where the images are downloaded
 # docname-> name of the document to be created
 # testlist->list tuple which contains the data to be added to report first page
-from webconsole import config
 
 
 def createreport(imagepath , docname , testlist) :
@@ -29,6 +31,9 @@ def createreport(imagepath , docname , testlist) :
     paragraph = document.add_paragraph ( )
 
     # reportheading = "Performance report"
+    file = 'config.ini'
+    config = ConfigParser ( )
+    config.read ( file )
     reportheading = (config [ 'report' ] [ 'heading' ])
     print ( reportheading )
     reportname = docname

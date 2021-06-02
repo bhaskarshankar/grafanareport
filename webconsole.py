@@ -1,18 +1,21 @@
 import json
 import os
-import urllib
 import time
-import pandas as pd
+import urllib
 from configparser import ConfigParser
 from threading import Thread
-from flask_wtf import FlaskForm
+from urllib.parse import urlparse , parse_qs
+
 import flask
-from flask import send_file , jsonify
+import pandas as pd
 from flask import Flask , render_template , request
+from flask import send_file , jsonify
+from flask_wtf import FlaskForm
 from wtforms import Form , StringField , SelectField
 from wtforms.validators import InputRequired
-from urllib.parse import urlparse , parse_qs
-from main_v1 import *
+
+# from main_v1 import *
+from main_v1 import grafanareport
 
 file = 'config.ini'
 config = ConfigParser ( )
@@ -96,8 +99,7 @@ def start_task(hostname , querystring , reportname , dashboardname , testlist) :
             time_counter += 1
             if time_counter > time_to_wait : break
         try :
-            #  print("Bhaskar_start_task_download")
-            #
+
             print ( "Bhaskar_start_redirect" )
             # return render_template('downloads.html')
 
@@ -113,7 +115,9 @@ def start_task(hostname , querystring , reportname , dashboardname , testlist) :
     # pythoncom.CoInitialize ( )
     thread = Thread ( target=do_work ( hostname , querystring , reportname , dashboardname , testlist ) ,
                       kwargs={'value' : request.args.get ( 'value' , 20 )} )
+
     thread.start ( )
+
     return flask.Response ( inner ( reportname ) , mimetype='text/html' )
 
 

@@ -1,9 +1,18 @@
+import datetime
+import json
+import os
+import re
+import time
 import urllib.request
 
-from worddoc import *
+import wget
+
+from parsejson import parse_json_recursively
+# from worddoc import *
+from worddoc import createreport
 
 
-def converttime(querystring,testlist ) :
+def converttime(querystring , testlist) :
     res = querystring.split ( '&' )
     tofilter = filter ( lambda a : 'to=' in a , res )
     fromfilter = filter ( lambda a : 'from=' in a , res )
@@ -45,6 +54,7 @@ def converttime(querystring,testlist ) :
 
 
 def grafanareport(hostname , querystring , file_path , dashboardname , testlist) :
+
     print(testlist,"printTestlist-before")
     converttime ( querystring , testlist )
     print ( testlist,"printTestlist-after" )
@@ -60,6 +70,9 @@ def grafanareport(hostname , querystring , file_path , dashboardname , testlist)
     print ( "jsonurl" )
 
     downloadloc = "images\\"
+
+    for f in os.listdir ( downloadloc ) :
+        os.remove ( os.path.join ( downloadloc , f ) )
 
     def downloadimage(dict1) :
         print ( dict1 )

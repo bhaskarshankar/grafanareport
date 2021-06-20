@@ -3,11 +3,16 @@ import json
 import os
 import re
 import time
-import urllib.request
+import logging
+import urllib
+from urllib.error import HTTPError
+from urllib.parse import urlparse
+from urllib.request import urlretrieve
 
-import wget
+import threading
 
 from parsejson import parse_json_recursively
+logging.basicConfig(filename='logfile.log', level=logging.DEBUG)
 # from worddoc import *
 from worddoc import createreport
 
@@ -36,7 +41,6 @@ def converttime(querystring , testlist) :
         print ( converted_num )
         tolist = str ( datetime.datetime.fromtimestamp ( converted_num ) )
 
-
     if "now" in convertListfrom :
         fromlist = convertListfrom
 
@@ -53,49 +57,78 @@ def converttime(querystring , testlist) :
     return testlist
 
 
-def grafanareport(hostname , querystring , file_path , dashboardname , testlist) :
 
-    print(testlist,"printTestlist-before")
+
+def grafanareport(hostname , querystring , file_path , dashboardname , testlist) :
+    print ( testlist , "printTestlist-before" )
     converttime ( querystring , testlist )
-    print ( testlist,"printTestlist-after" )
+    print ( testlist , "printTestlist-after" )
 
     # load data using Python JSON module
     regex = re.compile ( '[^a-zA-Z]' )
-    dict1 = {}
+   # dict1 = {}
     hostname = hostname
     dashboardname = dashboardname
     jsonapi = "api/dashboards/db/"
     jsonurl = "http://" + hostname + "/" + jsonapi + dashboardname
     imageurl = "http://" + hostname + "/render/dashboard-solo/db/" + dashboardname + "?orgId=1&theme=light&" + querystring + "&width=1500&height=350&panelId="
     print ( "jsonurl" )
+    max_concurrent_dl=4
+    dl_sem=threading.Semaphore(max_concurrent_dl)
 
     downloadloc = "images\\"
+
+    def downloadmutlithread(sourceurl , path,pid) :
+        print ( "download {}  {} ".format ( sourceurl , path+str(pid) ) )
+        try:
+            dl_sem.acquire()
+            urlretrieve ( sourceurl , downloadloc + path + "_" + str ( pid ) + ".png" ,)
+
+        except HTTPError as e :
+            print(e.read ( ))
+        finally:
+            dl_sem.release ( )
+
+        #urlretrieve ( sourceurl , destination )
 
     for f in os.listdir ( downloadloc ) :
         os.remove ( os.path.join ( downloadloc , f ) )
 
-    def downloadimage(dict1) :
-        print ( dict1 )
-        for k , v in dict1.items ( ) :
-            print ( "downloadimage  {} name {} ".format ( k , v ) )
+    def downloadimage(dictlist) :
+        threads=[]
+
+        for k , v in dictlist.items ( ) :
+        #    print ( "downloadimage  {} name {} ".format ( k , v ) )
 
             # path = k
             path = regex.sub ( '' , k )
-            print ( v )
+
             if type ( v ) == list :
-                print ( "list" )
+               # print ( "list" )
                 for i in v :
                     pid = i
-                    url = imageurl + str ( pid )
-                    wget.download ( url , downloadloc + path + "_" + str ( pid ) + ".png" )
+                    sourceurl = imageurl + str ( pid )
+                    destination=downloadloc + path + "_" + str ( pid ) + ".png"
+                   # print ( destination )
+                  #  urlretrieve ( sourceurl , downloadloc + path + "_" + str ( pid ) + ".png" )
+
+                   # wget.download ( sourceurl , downloadloc + path + "_" + str ( pid ) + ".png" )
             else :
                 pid = v
-                url = imageurl + str ( pid )
-                print ( url )
-                wget.download ( url , downloadloc + path + "_" + str ( pid ) + ".png" )
+                sourceurl = imageurl + str ( pid )
 
-    #def has_hidden_attribute(filepath) :
-     #   return bool ( os.stat ( filepath ).st_file_attributes & stat.FILE_ATTRIBUTE_HIDDEN )
+                destination = downloadloc + path + "_" + str ( pid ) + ".png"
+               # print ( destination )
+                #urlretrieve ( sourceurl , downloadloc + path + "_" + str ( pid ) + ".png" )
+               # wget.download ( sourceurl , downloadloc + path + "_" + str ( pid ) + ".png" )
+            #urlretrieve ( sourceurl , downloadloc + path + "_" + str ( pid ) + ".png" )
+            t=threading.Thread(target=downloadmutlithread,args=(sourceurl,path,pid))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            print(t)
+            t.join()
+
 
     # fetch panel ID from jsonURL :
     with urllib.request.urlopen ( jsonurl ) as url :

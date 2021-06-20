@@ -11,7 +11,8 @@ def parse_json_recursively(json_object , target_key) :
             if key == target_key :
                 if ('targets' in json_object.keys ( ) and 'title' in json_object.keys ( )) :
                     metrickey = re.sub ( '[^A-Za-z0-9]+' , '' , json_object [ 'title' ] )
-                    if metrickey not in dictionary :
+                    print ( "title {}".format ( metrickey ) )
+                    if( metrickey not in dictionary and len(metrickey) > 0):
                         value = json_object [ key ]
                         print ( "id {}: {} {}".format ( target_key , metrickey , value ) )
                         dictionary [ metrickey ] = value

@@ -1,18 +1,17 @@
 import datetime
 import json
+import logging
 import os
 import re
+import threading
 import time
-import logging
 import urllib
+from configparser import ConfigParser
 from urllib.error import HTTPError
-from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
-import threading
-
+from log import logger
 from parsejson import parse_json_recursively
-logging.basicConfig(filename='logfile.log', level=logging.DEBUG)
 # from worddoc import *
 from worddoc import createreport
 
@@ -26,8 +25,8 @@ def converttime(querystring , testlist) :
     tempfrom = (list ( fromfilter ))
     convertListto = ' '.join ( [ str ( e ) for e in tempto ] )
     convertListfrom = ' '.join ( [ str ( e ) for e in tempfrom ] )
-    print ( convertListto )
-    print ( convertListfrom )
+    # print ( convertListto )
+    # print ( convertListfrom )
 
     if "now" in convertListto :
         tolist = convertListto
@@ -38,7 +37,7 @@ def converttime(querystring , testlist) :
         temp1 = int ( datetinme [ 1 ] )
         type ( temp1 )
         converted_num = int ( temp1 ) / 1000
-        print ( converted_num )
+        # print ( converted_num )
         tolist = str ( datetime.datetime.fromtimestamp ( converted_num ) )
 
     if "now" in convertListfrom :
@@ -57,39 +56,49 @@ def converttime(querystring , testlist) :
     return testlist
 
 
-
-
 def grafanareport(hostname , querystring , file_path , dashboardname , testlist) :
-    print ( testlist , "printTestlist-before" )
+    # print ( testlist , "printTestlist-before" )
+    logger.info ( "Converting Grafana timestamp to human readable format %s %s" , querystring , testlist )
+
     converttime ( querystring , testlist )
-    print ( testlist , "printTestlist-after" )
+    # print ( testlist , "printTestlist-after" )
 
     # load data using Python JSON module
     regex = re.compile ( '[^a-zA-Z]' )
-   # dict1 = {}
+    # dict1 = {}
     hostname = hostname
     dashboardname = dashboardname
     jsonapi = "api/dashboards/db/"
     jsonurl = "http://" + hostname + "/" + jsonapi + dashboardname
     imageurl = "http://" + hostname + "/render/dashboard-solo/db/" + dashboardname + "?orgId=1&theme=light&" + querystring + "&width=1500&height=350&panelId="
-    print ( "jsonurl" )
-    max_concurrent_dl=4
-    dl_sem=threading.Semaphore(max_concurrent_dl)
+    # print ( "jsonurl" )
+    file = 'config.ini'
+    config = ConfigParser ( )
+    config.read ( file )
+    max_concurrent_dl = int ( config [ 'report' ] [ 'parallelthread' ] )
+    # print(max_concurrent_dl)
+    logger.info ( "using thread %s for downloading the images :" , max_concurrent_dl )
+
+    dl_sem = threading.Semaphore ( max_concurrent_dl )
 
     downloadloc = "images\\"
 
-    def downloadmutlithread(sourceurl , path,pid) :
-        print ( "download {}  {} ".format ( sourceurl , path+str(pid) ) )
-        try:
-            dl_sem.acquire()
-            urlretrieve ( sourceurl , downloadloc + path + "_" + str ( pid ) + ".png" ,)
+    def downloadmutlithread(sourceurl , path , pid) :
+        print ( "download {}  {} ".format ( sourceurl , path + str ( pid ) ) )
+        logger.info ( "download image %s %s :" , sourceurl , path + str ( pid ) )
+
+        try :
+            dl_sem.acquire ( )
+            urlretrieve ( sourceurl , downloadloc + path + "_" + str ( pid ) + ".png" , )
 
         except HTTPError as e :
-            print(e.read ( ))
-        finally:
+            print ( e.read ( ) )
+            logging.error ( f'{e.read ( )}' )
+        finally :
+
             dl_sem.release ( )
 
-        #urlretrieve ( sourceurl , destination )
+        # urlretrieve ( sourceurl , destination )
 
     for f in os.listdir ( downloadloc ) :
         os.remove ( os.path.join ( downloadloc , f ) )
@@ -126,8 +135,8 @@ def grafanareport(hostname , querystring , file_path , dashboardname , testlist)
             t.start()
             threads.append(t)
         for t in threads:
-            print(t)
-            t.join()
+            logger.info ( "Thread details %s" , t )
+            t.join ()
 
 
     # fetch panel ID from jsonURL :
@@ -139,10 +148,12 @@ def grafanareport(hostname , querystring , file_path , dashboardname , testlist)
     start_time = time.time ( )
     downloadimage ( dict1 )
     duration = time.time ( ) - start_time
+    logger.info ( "time taken to download %s  images in  %s in seconds" , len ( dict1 ) , duration )
     print ( f"Downloaded {len ( dict1 )} in {duration} seconds" )
     dict1.clear ( )
     createreport ( downloadloc , file_path , testlist )
     testlist.clear ( )
 
     for f in os.listdir ( downloadloc ) :
+        logger.info ( "deleting the images as the report is generated" )
         os.remove ( os.path.join ( downloadloc , f ) )

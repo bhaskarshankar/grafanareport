@@ -12,7 +12,6 @@ from docx.text import font
 
 # import pythoncom
 
-
 # creating the docx and PDF file with thr images downloaded and adding few details to report
 # imagepath path where the images are downloaded
 # docname-> name of the document to be created

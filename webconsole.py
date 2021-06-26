@@ -14,6 +14,7 @@ from flask_wtf import FlaskForm
 from wtforms import Form , StringField , SelectField
 from wtforms.validators import InputRequired
 
+from log import logger
 # from main_v1 import *
 from main_v1 import grafanareport
 
@@ -38,13 +39,14 @@ def fetchdb(grafanahost) :
 
     df_nested_list = pd.json_normalize ( data )
     df2 = (df_nested_list [ [ 'uid' , 'uri' , 'type' ] ])  # 1
-    print ( df2 )
+    # print ( df2 )
 
     for index , row in df2.iterrows ( ) :
         if (row [ 'type' ] == 'dash-db') :
             uri = row [ 'uri' ].split ( '/' )
             uid = row [ 'uid' ]
-            print ( "UDI {} ,URI {}" , uid , uri )
+            logger.info ( "UDI {} ,URI {}" , uid , uri )
+
             dbname.append ( (uri [ 1 ]) )
 
     return dbname
@@ -64,7 +66,7 @@ def register() :
     if request.method == 'POST' :
         grafanhost = form.grafanhost.data
         dashboardname = dashboardname
-        print (  ( dashboardname ) )
+        # print (  ( dashboardname ) )
         reportname = form.reportname.data
         testlist.append ( ("TestDetails" , form.TestDetails.data) )
         testlist.append ( ("envDetails" , form.envDetails.data) )
@@ -72,12 +74,15 @@ def register() :
         reportname += ".docx"
         args = request.url
         querystring1 = args.split ( sep="&" )
-        querystring='&'
+        querystring = '&'
         querystring = querystring.join ( querystring1 [ 1 : ] )
-        print ( dashboardname )
+        # print ( dashboardname )
 
-
-        print ( querystring )
+        # print ( querystring )
+        logger.info ( 'Grafana host %s ' , grafanhost )
+        logger.info ( 'TestDetails %s ' , form.TestDetails.data )
+        logger.info ( 'userdetailsa %s' , form.userdetails.data )
+        logger.info ( 'envDetails %s' , form.envDetails.data )
         start_task ( grafanhost , querystring , reportname , dashboardname , testlist )
         filepart = reportname.split ( "." )
         return render_template ( 'downloads.html' , value=filepart [ 0 ] )
@@ -89,25 +94,27 @@ def register() :
 def start_task(hostname , querystring , reportname , dashboardname , testlist) :
     def inner(reportname) :
         # simulate a long process to watch
-        print ( dashboardname )
+        # print ( dashboardname )
         file_path = "output\\" + reportname
         time_to_wait = 600
         time_counter = 0
         while not os.path.exists ( file_path ) :
-            print ( "Bhaskar_start_filecheck" )
+
+            logger.info ( "check if the file generated or not" )
             time.sleep ( 1 )
             time_counter += 1
             if time_counter > time_to_wait : break
         try :
 
-            print ( "Bhaskar_start_redirect" )
+            logger.info ( "redirecting to Downloadpage" )
             # return render_template('downloads.html')
 
         except Exception as e :
             return str ( e )
 
     def do_work(hostname , querystring , reportname , dashboardname , testlist) :
-        print(dashboardname)
+        logger.info ( "Generating  the report from the dashboard %s" , dashboardname )
+
         grafanareport ( hostname , querystring , reportname , dashboardname , testlist )
         import time
         time.sleep ( 1 )
@@ -151,5 +158,4 @@ if __name__ == '__main__' :
     reportport = (config [ 'report' ] [ 'port' ])
     Debug = (config [ 'report' ] [ 'debug' ])
     app.debug = False
-    print ( Debug )
     app.run ( reporthost , reportport )
